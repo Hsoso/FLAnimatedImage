@@ -314,9 +314,7 @@ static NSUInteger gcd(NSUInteger a, NSUInteger b)
 //        self.displayLink.frameInterval = MAX([self frameDelayGreatestCommonDivisor] * kDisplayRefreshRate, 1);
 
         if (@available(iOS 10, *)) {
-            // Adjusting preferredFramesPerSecond allows us to skip unnecessary calls to displayDidRefresh: when showing GIFs
-            // that don't animate quickly. Use ceil to err on the side of too many FPS so we don't miss a frame transition moment.
-            self.displayLink.preferredFramesPerSecond = ceil(1.0 / [self frameDelayGreatestCommonDivisor]);
+            
         } else {
             const NSTimeInterval kDisplayRefreshRate = 60.0; // 60Hz
             self.displayLink.frameInterval = MAX([self frameDelayGreatestCommonDivisor] * kDisplayRefreshRate, 1);
@@ -406,9 +404,14 @@ static NSUInteger gcd(NSUInteger a, NSUInteger b)
                 self.needsDisplayWhenImageBecomesAvailable = NO;
             }
             
-//            self.accumulator += displayLink.duration * displayLink.frameInterval;
+            CFTimeInterval duration = displayLink.duration;
+            if (displayLink.preferredFramesPerSecond > 0) {
+                
+                duration = 1.0 / displayLink.preferredFramesPerSecond;
+            }
+
             if (@available(iOS 10, *)) {
-                self.accumulator += displayLink.targetTimestamp - CACurrentMediaTime();
+                self.accumulator += duration;
             } else {
                 self.accumulator += displayLink.duration * displayLink.frameInterval;
             }
